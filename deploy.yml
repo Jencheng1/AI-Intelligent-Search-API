@@ -1,0 +1,74 @@
+---
+- name: Deploy Notes Search API
+  hosts: production
+  become: yes
+  vars:
+    app_dir: /opt/notes-search-api
+    docker_compose_version: "2.11.0"
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+          - python3-pip
+        state: present
+        update_cache: yes
+
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy application files
+      copy:
+        src: "{{ item }}"
+        dest: "{{ app_dir }}/"
+      withItems:
+        - main.py
+        - models.py
+        - classifier.py
+        - requirements.txt
+        - docker-compose.yml
+        - Dockerfile
+        - .env
+
+    - name: Create models directory
+      file:
+        path: "{{ app_dir }}/models"
+        state: directory
+        mode: '0755'
+
+    - name: Pull Docker images
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        pull: yes
+
+    - name: Start application
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        state: present
+        build: yes
+
+    - name: Wait for services to be ready
+      wait_for:
+        port: 8000
+        timeout: 30
+
+    - name: Check application health
+      uri:
+        url: http://localhost:8000/health
+        method: GET
+        status_code: 200
+      register: health_check
+      until: health_check.status == 200
+      retries: 5
+      delay: 5 
