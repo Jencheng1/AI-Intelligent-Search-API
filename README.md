@@ -5,12 +5,12 @@ A powerful REST API for storing, searching, and classifying notes using FastAPI,
 ## Architecture Overview
 
 ```mermaid
-graph TD
-    A[Client] -->|HTTP Requests| B[FastAPI Application]
-    B -->|Store/Search| C[Elasticsearch]
-    B -->|Classify| D[ML Classifier]
-    D -->|TF-IDF + Naive Bayes| E[Category Prediction]
-    C -->|Full-text Search| F[Search Results]
+graph TD;
+    Client[Client] -->|HTTP Requests| API[FastAPI Application];
+    API -->|Store/Search| ES[Elasticsearch];
+    API -->|Classify| ML[ML Classifier];
+    ML -->|TF-IDF + Naive Bayes| CP[Category Prediction];
+    ES -->|Full-text Search| SR[Search Results];
 ```
 
 ## System Components
